@@ -1,8 +1,21 @@
+import { useState } from 'react';
+import Chat from './components/Chat';
+import Settings from './components/Settings';
+
+type Page = 'chat' | 'settings';
+
 function App() {
+  const [currentPage, setCurrentPage] = useState<Page>('chat');
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <p>Start prompting (or editing) to see magic happen :)</p>
-    </div>
+    <>
+      {currentPage === 'chat' && (
+        <Chat onOpenSettings={() => setCurrentPage('settings')} />
+      )}
+      {currentPage === 'settings' && (
+        <Settings onBack={() => setCurrentPage('chat')} />
+      )}
+    </>
   );
 }
 
