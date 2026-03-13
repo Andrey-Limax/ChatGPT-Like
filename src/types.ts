@@ -1,14 +1,14 @@
 export type AIProvider = 'gemini' | 'groq' | 'openai' | 'claude';
 
 export type AIModel =
-  | 'gemini-1.5-flash'
-  | 'gemini-1.5-pro'
+  | 'gemini-3-flash'
+  | 'gemini-3.1-flash-lite-preview'
   | 'llama-3.3-70b-versatile'
-  | 'mixtral-8x7b-32768'
-  | 'gpt-4o'
-  | 'gpt-4o-mini'
-  | 'claude-3-5-sonnet-20241022'
-  | 'claude-3-haiku-20240307';
+  | 'llama-3.1-8b-instant'
+  | 'gpt-4.1'
+  | 'gpt-4.1-mini'
+  | 'claude-sonnet-4-6'
+  | 'claude-haiku-4-5-20251001';
 
 export interface Settings {
   provider: AIProvider;
@@ -30,8 +30,8 @@ export interface UploadedFile {
 }
 
 export const PROVIDER_MODELS: Record<AIProvider, AIModel[]> = {
-  gemini: ['gemini-1.5-flash', 'gemini-1.5-pro'],
-  groq: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768'],
-  openai: ['gpt-4o', 'gpt-4o-mini'],
-  claude: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
+  gemini: ['gemini-3-flash', 'gemini-3.1-flash-lite-preview'],
+  groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
+  openai: ['gpt-4.1', 'gpt-4.1-mini'],
+  claude: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
 };
