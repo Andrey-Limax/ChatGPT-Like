@@ -7,42 +7,149 @@ const corsHeaders = {
 };
 
 interface ChatRequest {
+  provider: string;
   apiKey: string;
   model: string;
   messages: Array<{ role: string; content: string }>;
   systemPrompt: string;
 }
 
-const getApiEndpoint = (model: string): string => {
-  if (model.startsWith('claude')) {
-    return 'https://api.anthropic.com/v1/messages';
-  }
-  return 'https://api.openai.com/v1/chat/completions';
-};
-
-const getHeaders = (apiKey: string, model: string): HeadersInit => {
-  if (model.startsWith('claude')) {
-    return {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    };
-  }
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`,
-  };
-};
-
-const formatMessagesForClaude = (
+const callGemini = async (
+  apiKey: string,
+  model: string,
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
-) => {
-  const userMessages = messages.filter(m => m.role !== 'system');
-  return {
-    system: systemPrompt,
-    messages: userMessages,
-  };
+): Promise<string> => {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+      })),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      (errorData as Record<string, unknown>).error?.message as string ||
+        'Gemini API error'
+    );
+  }
+
+  const data = await response.json();
+  return ((data.candidates?.[0]?.content?.parts?.[0] as Record<string, unknown>)?.text as string) || '';
+};
+
+const callGroq = async (
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string
+): Promise<string> => {
+  const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      (errorData as Record<string, unknown>).error?.message as string ||
+        'Groq API error'
+    );
+  }
+
+  const data = await response.json();
+  return ((data.choices?.[0]?.message as Record<string, unknown>)?.content as string) || '';
+};
+
+const callOpenAI = async (
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string
+): Promise<string> => {
+  const endpoint = 'https://api.openai.com/v1/chat/completions';
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      (errorData as Record<string, unknown>).error?.message as string ||
+        'OpenAI API error'
+    );
+  }
+
+  const data = await response.json();
+  return ((data.choices?.[0]?.message as Record<string, unknown>)?.content as string) || '';
+};
+
+const callClaude = async (
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string
+): Promise<string> => {
+  const endpoint = 'https://api.anthropic.com/v1/messages';
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      (errorData as Record<string, unknown>).error?.message as string ||
+        'Claude API error'
+    );
+  }
+
+  const data = await response.json();
+  return ((data.content?.[0] as Record<string, unknown>)?.text as string) || '';
 };
 
 Deno.serve(async (req: Request) => {
@@ -54,7 +161,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { apiKey, model, messages, systemPrompt }: ChatRequest = await req.json();
+    const { provider, apiKey, model, messages, systemPrompt }: ChatRequest = await req.json();
 
     if (!apiKey) {
       return new Response(
@@ -66,57 +173,39 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const endpoint = getApiEndpoint(model);
-    const headers = getHeaders(apiKey, model);
-
-    const formattedMessages = [
-      { role: 'system', content: systemPrompt },
-      ...messages,
-    ];
-
-    let requestBody: unknown;
-
-    if (model.startsWith('claude')) {
-      const claudeFormatted = formatMessagesForClaude(formattedMessages, systemPrompt);
-      requestBody = {
-        model: model,
-        max_tokens: 4096,
-        ...claudeFormatted,
-      };
-    } else {
-      requestBody = {
-        model: model,
-        messages: formattedMessages,
-      };
-    }
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = (errorData as Record<string, unknown>).error?.message ||
-        `API request failed: ${response.statusText}`;
-
+    if (!provider) {
       return new Response(
-        JSON.stringify({ error: errorMessage }),
+        JSON.stringify({ error: 'Provider is required' }),
         {
-          status: response.status,
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
 
-    const data = await response.json();
-
     let responseContent: string;
-    if (model.startsWith('claude')) {
-      responseContent = (data.content[0] as Record<string, unknown>).text as string;
-    } else {
-      responseContent = ((data.choices[0] as Record<string, unknown>).message as Record<string, unknown>).content as string;
+
+    switch (provider) {
+      case 'gemini':
+        responseContent = await callGemini(apiKey, model, messages, systemPrompt);
+        break;
+      case 'groq':
+        responseContent = await callGroq(apiKey, model, messages, systemPrompt);
+        break;
+      case 'openai':
+        responseContent = await callOpenAI(apiKey, model, messages, systemPrompt);
+        break;
+      case 'claude':
+        responseContent = await callClaude(apiKey, model, messages, systemPrompt);
+        break;
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Unknown provider' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
     }
 
     return new Response(

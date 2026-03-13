@@ -1,8 +1,9 @@
-import { Settings, AIModel } from '../types';
+import { Settings, AIModel, AIProvider } from '../types';
 
 const SETTINGS_KEY = 'chatbot_settings';
 
 const DEFAULT_SETTINGS: Settings = {
+  provider: 'openai' as AIProvider,
   apiKey: '',
   model: 'gpt-4o' as AIModel,
   systemPrompt: 'You are a helpful assistant.',

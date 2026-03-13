@@ -87,6 +87,7 @@ export default function Chat({ onOpenSettings }: ChatProps) {
       const response = await sendChatMessage(
         messagesToSend,
         settings.apiKey,
+        settings.provider,
         settings.model,
         settings.systemPrompt
       );

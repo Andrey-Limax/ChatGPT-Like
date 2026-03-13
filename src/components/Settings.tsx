@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsType, AIModel } from '../types';
+import { Settings as SettingsType, AIModel, AIProvider, PROVIDER_MODELS } from '../types';
 import { getSettings, saveSettings } from '../utils/settings';
 import { ArrowLeft, Save } from 'lucide-react';
 
@@ -7,11 +7,19 @@ interface SettingsProps {
   onBack: () => void;
 }
 
-const AI_MODELS: { value: AIModel; label: string }[] = [
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' },
+const PROVIDERS: { value: AIProvider; label: string }[] = [
+  { value: 'gemini', label: 'Google Gemini (Free)' },
+  { value: 'groq', label: 'Groq (Free)' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'claude', label: 'Anthropic Claude' },
 ];
+
+const PROVIDER_LABELS: Record<AIProvider, string> = {
+  gemini: 'Google Gemini API Key',
+  groq: 'Groq API Key',
+  openai: 'OpenAI API Key',
+  claude: 'Anthropic API Key',
+};
 
 export default function Settings({ onBack }: SettingsProps) {
   const [settings, setSettings] = useState<SettingsType>(getSettings());
@@ -21,11 +29,22 @@ export default function Settings({ onBack }: SettingsProps) {
     setSettings(getSettings());
   }, []);
 
+  const handleProviderChange = (newProvider: AIProvider) => {
+    const models = PROVIDER_MODELS[newProvider];
+    setSettings({
+      ...settings,
+      provider: newProvider,
+      model: models[0],
+    });
+  };
+
   const handleSave = () => {
     saveSettings(settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const availableModels = PROVIDER_MODELS[settings.provider];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,10 +65,36 @@ export default function Settings({ onBack }: SettingsProps) {
           <div className="space-y-6">
             <div>
               <label
+                htmlFor="provider"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                AI Provider
+              </label>
+              <select
+                id="provider"
+                value={settings.provider}
+                onChange={(e) =>
+                  handleProviderChange(e.target.value as AIProvider)
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              >
+                {PROVIDERS.map((provider) => (
+                  <option key={provider.value} value={provider.value}>
+                    {provider.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Select which AI provider to use for your conversations.
+              </p>
+            </div>
+
+            <div>
+              <label
                 htmlFor="apiKey"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                API Key
+                {PROVIDER_LABELS[settings.provider]}
               </label>
               <input
                 id="apiKey"
@@ -58,7 +103,7 @@ export default function Settings({ onBack }: SettingsProps) {
                 onChange={(e) =>
                   setSettings({ ...settings, apiKey: e.target.value })
                 }
-                placeholder="Enter your OpenAI or Anthropic API key"
+                placeholder={`Enter your ${PROVIDER_LABELS[settings.provider].toLowerCase()}`}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
               />
               <p className="mt-2 text-sm text-gray-500">
@@ -71,7 +116,7 @@ export default function Settings({ onBack }: SettingsProps) {
                 htmlFor="model"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                AI Model
+                Model
               </label>
               <select
                 id="model"
@@ -81,9 +126,9 @@ export default function Settings({ onBack }: SettingsProps) {
                 }
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
               >
-                {AI_MODELS.map((model) => (
-                  <option key={model.value} value={model.value}>
-                    {model.label}
+                {availableModels.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
                   </option>
                 ))}
               </select>

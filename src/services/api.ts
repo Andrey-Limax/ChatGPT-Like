@@ -1,8 +1,9 @@
-import { AIModel, Message } from '../types';
+import { AIModel, AIProvider, Message } from '../types';
 
 export const sendChatMessage = async (
   messages: Message[],
   apiKey: string,
+  provider: AIProvider,
   model: AIModel,
   systemPrompt: string
 ): Promise<string> => {
@@ -20,6 +21,7 @@ export const sendChatMessage = async (
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      provider,
       apiKey,
       model,
       messages: formattedMessages,
