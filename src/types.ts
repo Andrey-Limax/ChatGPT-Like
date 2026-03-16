@@ -2,7 +2,7 @@ export type AIProvider = 'gemini' | 'groq' | 'openai' | 'claude';
 
 export type AIModel =
   | 'gemini-3-flash'
-  | 'gemini-3.1-flash-lite-preview'
+  | 'gemini-3.1-flash-lite'
   | 'llama-3.3-70b-versatile'
   | 'llama-3.1-8b-instant'
   | 'gpt-4.1'
@@ -30,7 +30,7 @@ export interface UploadedFile {
 }
 
 export const PROVIDER_MODELS: Record<AIProvider, AIModel[]> = {
-  gemini: ['gemini-3-flash', 'gemini-3.1-flash-lite-preview'],
+  gemini: ['gemini-3-flash', 'gemini-3.1-flash-lite'],
   groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
   openai: ['gpt-4.1', 'gpt-4.1-mini'],
   claude: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
