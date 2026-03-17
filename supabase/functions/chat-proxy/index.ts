@@ -20,7 +20,7 @@ const callGemini = async (
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
 ): Promise<string> => {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetch(endpoint, {
     method: 'POST',
