@@ -20,18 +20,25 @@ const callGemini = async (
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string
 ): Promise<string> => {
-  const endpoint = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+  // Gemini 2.0 models require /v1beta/ endpoint (not /v1/)
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  // Build request body — only include system_instruction when non-empty
+  const requestBody: Record<string, unknown> = {
+    contents: messages.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }],
+    })),
+  };
+
+  if (systemPrompt && systemPrompt.trim()) {
+    requestBody.system_instruction = { parts: [{ text: systemPrompt }] };
+  }
 
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      })),
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

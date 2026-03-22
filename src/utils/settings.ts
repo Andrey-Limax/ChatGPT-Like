@@ -5,7 +5,7 @@ const SETTINGS_KEY = 'chatbot_settings';
 const DEFAULT_SETTINGS: Settings = {
   provider: 'openai' as AIProvider,
   apiKey: '',
-  model: 'gpt-4.1-mini' as AIModel,
+  model: 'gpt-4o-mini' as AIModel,
   systemPrompt: 'You are a helpful assistant.',
 };
 

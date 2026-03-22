@@ -5,10 +5,11 @@ export type AIModel =
   | 'gemini-2.0-flash-lite'
   | 'llama-3.3-70b-versatile'
   | 'llama-3.1-8b-instant'
-  | 'gpt-4.1'
-  | 'gpt-4.1-mini'
-  | 'claude-sonnet-4-6'
-  | 'claude-haiku-4-5-20251001';
+  | 'gpt-4o'
+  | 'gpt-4o-mini'
+  | 'claude-opus-4-20250514'
+  | 'claude-sonnet-4-5'
+  | 'claude-haiku-4-5';
 
 export interface Settings {
   provider: AIProvider;
@@ -32,6 +33,6 @@ export interface UploadedFile {
 export const PROVIDER_MODELS: Record<AIProvider, AIModel[]> = {
   gemini: ['gemini-2.0-flash', 'gemini-2.0-flash-lite'],
   groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
-  openai: ['gpt-4.1', 'gpt-4.1-mini'],
-  claude: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+  openai: ['gpt-4o', 'gpt-4o-mini'],
+  claude: ['claude-opus-4-20250514', 'claude-sonnet-4-5', 'claude-haiku-4-5'],
 };
